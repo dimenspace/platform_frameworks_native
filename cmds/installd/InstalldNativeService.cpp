@@ -302,9 +302,10 @@ status_t InstalldNativeService::dump(int fd, const Vector<String16> & /* args */
  * if the label of that top-level file actually changed.  This can save us
  * significant time by avoiding no-op traversals of large filesystem trees.
  */
-static int restorecon_app_data_lazy(const std::string& path, const std::string& seInfo, uid_t uid,
-        bool existing) {
+static int restorecon_app_data_lazy(const std::string& path __unused, const std::string& seInfo __unused, uid_t uid __unused,
+        bool existing __unused) {
     int res = 0;
+#if 0
     char* before = nullptr;
     char* after = nullptr;
 
@@ -344,6 +345,7 @@ fail:
 done:
     free(before);
     free(after);
+#endif
     return res;
 }
 
