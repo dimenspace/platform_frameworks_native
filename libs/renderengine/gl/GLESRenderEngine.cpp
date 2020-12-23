@@ -255,6 +255,8 @@ std::unique_ptr<GLESRenderEngine> GLESRenderEngine::create(int hwcFormat, uint32
         ALOGE_IF(protectedContext == EGL_NO_CONTEXT, "Can't create protected context");
     }
 
+    ALOGW("GLESRenderEngine create context!");
+
     EGLContext ctxt = createEglContext(display, config, protectedContext, useContextPriority,
                                        Protection::UNPROTECTED);
 
@@ -1331,13 +1333,14 @@ EGLContext GLESRenderEngine::createEglContext(EGLDisplay display, EGLConfig conf
                                               Protection protection) {
     EGLint renderableType = 0;
     if (config == EGL_NO_CONFIG) {
-        renderableType = EGL_OPENGL_ES3_BIT;
+        // renderableType = EGL_OPENGL_ES3_BIT;
+        renderableType = EGL_OPENGL_ES2_BIT;
     } else if (!eglGetConfigAttrib(display, config, EGL_RENDERABLE_TYPE, &renderableType)) {
         LOG_ALWAYS_FATAL("can't query EGLConfig RENDERABLE_TYPE");
     }
     EGLint contextClientVersion = 0;
     if (renderableType & EGL_OPENGL_ES3_BIT) {
-        contextClientVersion = 3;
+        contextClientVersion = 2;
     } else if (renderableType & EGL_OPENGL_ES2_BIT) {
         contextClientVersion = 2;
     } else if (renderableType & EGL_OPENGL_ES_BIT) {
@@ -1360,9 +1363,13 @@ EGLContext GLESRenderEngine::createEglContext(EGLDisplay display, EGLConfig conf
     }
     contextAttributes.push_back(EGL_NONE);
 
+    ALOGW("Before create context, version: %d", contextClientVersion);
+
     EGLContext context = eglCreateContext(display, config, shareContext, contextAttributes.data());
 
-    if (contextClientVersion == 3 && context == EGL_NO_CONTEXT) {
+    ALOGW("After create context, context: %p", context);
+
+    if (contextClientVersion == 2 && context == EGL_NO_CONTEXT) {
         // eglGetConfigAttrib indicated we can create GLES 3 context, but we failed, thus
         // EGL_NO_CONTEXT so that we can abort.
         if (config != EGL_NO_CONFIG) {
@@ -1370,8 +1377,9 @@ EGLContext GLESRenderEngine::createEglContext(EGLDisplay display, EGLConfig conf
         }
         // If |config| is EGL_NO_CONFIG, we speculatively try to create GLES 3 context, so we should
         // try to fall back to GLES 2.
-        contextAttributes[1] = 2;
+        contextAttributes[1] = 1;
         context = eglCreateContext(display, config, shareContext, contextAttributes.data());
+        ALOGW("Fallback create context, context: %p", context);
     }
 
     return context;
